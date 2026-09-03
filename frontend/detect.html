@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CivicAI — Detect</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <nav class="nav">
+    <a class="brand" href="index.html"><span class="logo">C</span><span data-t="brand">CIVIC SENSE</span></a>
+    <div class="navlinks">
+      <a href="index.html" data-t="city">City Pulse</a>
+      <a class="active" href="detect.html" data-t="detect">Detect</a>
+      <a href="issues.html" data-t="issues">Issues</a>
+      <a href="reports.html" data-t="reports">Reports</a>
+    </div>
+    <div class="actions">
+      <select id="language" class="lang">
+        <option value="en">EN</option>
+        <option value="hi">हिंदी</option>
+        <option value="mr">मराठी</option>
+      </select>
+      <button id="theme" class="theme">☾</button>
+    </div>
+  </nav>
+
+  <main>
+    <!-- Header -->
+    <div class="title">
+      <div>
+        <h2 data-t="detectTitle">DETECT.</h2>
+        <p class="muted" data-t="detectSub">Upload an image and let AI analyse it automatically.</p>
+      </div>
+      <div class="eyebrow">02 / AI VISION</div>
+    </div>
+
+    <!-- Upload + Result Grid -->
+    <section class="detectGrid">
+      <!-- Upload Card -->
+      <div class="card upload" id="upload">
+        <img id="preview" style="display:none">
+        <div class="uploadContent">
+          <div class="uploadIcon">＋</div>
+          <h3 data-t="upload">DROP AN IMAGE</h3>
+          <p>JPG, JPEG or PNG. Analysis starts automatically after upload.</p>
+          <label class="fileBtn" for="imageInput" data-t="choose">CHOOSE IMAGE</label>
+          <input id="imageInput" type="file" accept="image/jpeg,image/png,image/jpg" hidden>
+        </div>
+      </div>
+
+      <!-- AI Result Card -->
+      <div class="result">
+        <div class="eyebrow">AI RESULT</div>
+        <h3 id="resultTitle" data-t="result">ANALYSIS RESULT</h3>
+        <p id="resultText" class="muted" data-t="noResult">Upload an image to begin.</p>
+        <div id="loader" class="loader">
+          <div class="spinner"></div>
+          <div class="muted" style="text-align:center">Analysing image…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Report Submission Form (hidden until analysis completes) -->
+    <section id="reportForm" class="card" style="display:none; margin-top:14px;">
+      <div class="eyebrow">SUBMIT REPORT</div>
+      <h3 style="margin:10px 0 15px; font-family:'Space Grotesk',sans-serif; font-size:22px;">Confirm & Report</h3>
+
+      <label style="display:block; margin-bottom:6px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); font-weight:600;">Issue Category</label>
+      <select id="categorySelect" class="lang" style="width:100%; height:44px; margin-bottom:16px; border-radius:11px; padding:0 12px; font-size:14px;">
+        <option value="Pothole">Pothole</option>
+        <option value="Damaged Streetlight">Damaged Streetlight</option>
+        <option value="Overflowing Garbage">Overflowing Garbage</option>
+        <option value="Water Leakage">Water Leakage</option>
+        <option value="Road Damage">Road Damage</option>
+        <option value="Other">Other</option>
+      </select>
+
+      <!-- V2 Geolocation Section -->
+      <div id="locationSection" style="margin-bottom: 20px; padding: 15px; border: 1px solid var(--line); border-radius: 11px; background: var(--card);">
+        <label style="display:block; margin-bottom:10px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); font-weight:600;">📍 Report Location</label>
+        <p style="font-size: 13px; color: var(--muted); margin-bottom: 12px;">We need your location to identify where the civic issue was found.</p>
+        
+        <button id="getLocationBtn" type="button" class="fileBtn" style="background:var(--text); color:var(--bg); border:none; padding:10px 15px; margin-bottom:12px; width:100%; cursor:pointer;">Use My Current Location</button>
+        
+        <div id="locationStatus" style="font-size: 13px; margin-bottom: 8px;"></div>
+        
+        <!-- Manual Fallback (Hidden by default, shown only on error) -->
+        <button id="showManualLocBtn" type="button" style="display:none; background:transparent; border:none; color:var(--muted); text-decoration:underline; cursor:pointer; font-size:12px; margin-bottom:10px;">Enter Location Manually</button>
+        
+        <div id="manualLocationFields" style="display:none; gap:10px; flex-direction:column;">
+          <input type="number" id="manualLat" placeholder="Latitude (-90 to 90)" step="any" style="padding:10px; border:1px solid var(--line); border-radius:8px; background:var(--soft); color:var(--text); font:inherit;">
+          <input type="number" id="manualLng" placeholder="Longitude (-180 to 180)" step="any" style="padding:10px; border:1px solid var(--line); border-radius:8px; background:var(--soft); color:var(--text); font:inherit;">
+          <button id="applyManualLocBtn" type="button" style="padding:10px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--text); cursor:pointer; font-weight:600;">Apply Coordinates</button>
+        </div>
+      </div>
+
+      <label style="display:block; margin-bottom:6px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); font-weight:600;">Description (optional)</label>
+      <textarea id="descriptionInput" rows="3" placeholder="Briefly describe the issue…" style="width:100%; padding:12px; border:1px solid var(--line); border-radius:11px; background:var(--soft); color:var(--text); font:inherit; resize:vertical; margin-bottom:16px;"></textarea>
+
+      <button id="submitReport" class="fileBtn" style="width:100%; text-align:center; border:none; cursor:pointer;">SUBMIT REPORT</button>
+    </section>
+
+    <!-- Report Result (hidden until submission succeeds) -->
+    <section id="reportResult" class="result" style="display:none; margin-top:14px;">
+    </section>
+
+    <!-- Civic Category Cards -->
+    <div class="title">
+      <div>
+        <h2>WHAT WE SEE.</h2>
+        <p class="muted">Civic categories.</p>
+      </div>
+    </div>
+    <div class="issueCards">
+      <div class="issue"><div class="issueIcon">🗑</div><h3 data-t="garbage">Garbage</h3><p>Waste accumulation</p></div>
+      <div class="issue"><div class="issueIcon">◉</div><h3 data-t="pothole">Pothole</h3><p>Road surface damage</p></div>
+      <div class="issue"><div class="issueIcon">⚠</div><h3 data-t="road">Road Damage</h3><p>Cracks and hazards</p></div>
+      <div class="issue"><div class="issueIcon">💡</div><h3 data-t="light">Street Light</h3><p>Lighting issues</p></div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Scripts: config first, then shared app.js, then detect.js -->
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script src="detect.js"></script>
+</body>
+</html>

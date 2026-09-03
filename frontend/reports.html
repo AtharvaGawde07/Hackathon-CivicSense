@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CivicAI — Reports</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <nav class="nav">
+    <a class="brand" href="index.html"><span class="logo">C</span><span data-t="brand">CIVIC SENSE</span></a>
+    <div class="navlinks">
+      <a href="index.html" data-t="city">City Pulse</a>
+      <a href="detect.html" data-t="detect">Detect</a>
+      <a href="issues.html" data-t="issues">Issues</a>
+      <a class="active" href="reports.html" data-t="reports">Reports</a>
+    </div>
+    <div class="actions">
+      <select id="language" class="lang">
+        <option value="en">EN</option>
+        <option value="hi">हिंदी</option>
+        <option value="mr">मराठी</option>
+      </select>
+      <button id="theme" class="theme">☾</button>
+    </div>
+  </nav>
+
+  <main>
+    <div class="title">
+      <div>
+        <h2>REPORTS.</h2>
+        <p class="muted">Community-reported civic issues.</p>
+      </div>
+      <div class="eyebrow">04 / COMMUNITY</div>
+    </div>
+
+    <!-- Live reports from backend -->
+    <div class="reportList" id="reportList">
+      <div class="report">
+        <div><h3 class="muted">Loading reports…</h3></div>
+      </div>
+    </div>
+
+    <!-- Map Section -->
+    <div class="title">
+      <div>
+        <h2>MAP.</h2>
+        <p class="muted">Live issue locations.</p>
+      </div>
+    </div>
+    <div class="mapTools">
+      <button id="locate">USE MY LOCATION</button>
+      <button onclick="location.reload()">REFRESH MAP</button>
+    </div>
+    <div id="map"></div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* ── Map ───────────────────────────────────────────────── */
+let map = L.map("map").setView([19.076, 72.877], 12);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  attribution: "© OpenStreetMap contributors"
+}).addTo(map);
+
+document.getElementById("locate").onclick = () =>
+  navigator.geolocation?.getCurrentPosition(
+    pos => {
+      map.setView([pos.coords.latitude, pos.coords.longitude], 16);
+      L.marker([pos.coords.latitude, pos.coords.longitude])
+        .addTo(map).bindPopup("Your location").openPopup();
+      toast("Location found.");
+    },
+    () => toast("Location permission was not granted.")
+  );
+
+/* ── Fetch Reports from Backend ───────────────────────── */
+const statusBadge = (status) => {
+  const s = (status || "reported").toLowerCase();
+  if (s === "resolved") return '<span class="badge">RESOLVED</span>';
+  if (s === "assigned" || s === "in_progress") return '<span class="badge yellow">IN PROGRESS</span>';
+  return '<span class="badge red">OPEN</span>';
+};
+
+async function loadReports() {
+  const container = document.getElementById("reportList");
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/reports`);
+    const data = await res.json();
+
+    if (!data.success || !data.reports || data.reports.length === 0) {
+      container.innerHTML =
+        '<div class="report"><div><h3 class="muted">No reports yet.</h3><p>Be the first to report a civic issue!</p></div></div>';
+      return;
+    }
+
+    // Show reports newest-first
+    const reports = data.reports.slice().reverse();
+    container.innerHTML = reports.map(r => {
+      const title = r.user?.confirmed_category || r.issue?.type || "Civic Issue";
+      const desc = r.user?.description || "";
+      const time = r.created_at ? new Date(r.created_at).toLocaleString() : "";
+      const locText = r.location?.latitude && r.location?.longitude 
+        ? `📍 ${r.location.latitude.toFixed(4)}, ${r.location.longitude.toFixed(4)}`
+        : "";
+      return `<div class="report">
+        <div>
+          <h3>${r.id} — ${title}</h3>
+          <p>${desc ? desc + " · " : ""}${locText ? locText + " · " : ""}${time}</p>
+        </div>
+        ${statusBadge(r.status)}
+      </div>`;
+    }).join("");
+
+    // Plot reports with coordinates on the map
+    reports.forEach(r => {
+      if (r.location && r.location.latitude && r.location.longitude) {
+        const title = r.user?.confirmed_category || r.issue?.type || "Civic Issue";
+        L.marker([r.location.latitude, r.location.longitude])
+          .addTo(map)
+          .bindPopup(`<b>${r.id}: ${title}</b><br>${r.user?.description || "No description"}`);
+      }
+    });
+
+  } catch (err) {
+    container.innerHTML =
+      `<div class="report"><div><h3 class="muted">Could not load reports.</h3><p>Backend at <code>${API_BASE_URL}</code> may be offline.</p></div></div>`;
+  }
+}
+
+loadReports();
+</script>
+</body>
+</html>

@@ -1,64 +1,128 @@
 # 🏙️ CivicAI — Smart Civic Issue Reporting & Resolution Platform
 
-> **Hackathon:** IGNITE IT 8.0  
-> **Problem Statement:** FSD 2 — Smart Civic Issue Reporting & Resolution Platform  
-> **Version:** 1.0 (Foundation)
+> **Hackathon:** IGNITE IT 8.0
+> **Problem Statement:** FSD 2 — Smart Civic Issue Reporting & Resolution Platform
+> **Version:** 2.0 (HTML/FastAPI + Geolocation)
 
 ---
 
 ## What is CivicAI?
 
-CivicAI is a civic-technology platform that enables citizens to report urban infrastructure problems — potholes, damaged streetlights, overflowing garbage, water leakage, road damage, and more — using photographs and (in future versions) geolocation.
+CivicAI is a civic-technology platform that enables citizens to report urban infrastructure problems — potholes, damaged streetlights, overflowing garbage, water leakage, road damage, and more — using photographs analysed by YOLO-based AI models.
 
-The platform is designed to eventually support the full FSD 2 lifecycle:
-
-- AI-powered image classification  
-- Duplicate-report clustering  
-- Intelligent priority scoring  
-- Authority assignment & tracking  
-- After-repair verification  
-- Spam/suspicious-report detection  
-- Real-time status updates & dashboards  
+The platform is designed to eventually support the full FSD 2 lifecycle: duplicate-report clustering, intelligent priority scoring, authority assignment & tracking, after-repair verification, spam detection, and real-time dashboards.
 
 ---
 
-## Current V1 Functionality
+## Architecture
 
-V1 is a **clean, extensible foundation**.  It implements:
+```
+┌──────────────────────┐       HTTP / REST        ┌──────────────────────┐
+│                      │  ───────────────────────▶ │                      │
+│   HTML / CSS / JS    │  POST /api/analyze        │   FastAPI Backend    │
+│   (frontend/)        │  POST /api/reports        │   (backend/main.py)  │
+│                      │  GET  /api/reports         │                      │
+│                      │  ◀─────────────────────── │                      │
+└──────────────────────┘       JSON responses      └──────────┬───────────┘
+                                                              │
+                                                   ┌──────────▼───────────┐
+                                                   │  AI Classifier       │
+                                                   │  (ai/classifier.py)  │
+                                                   │                      │
+                                                   │  YOLO Models:        │
+                                                   │  • garbage_class.    │
+                                                   │  • road_damage       │
+                                                   │  • litter_detection  │
+                                                   │  • flood_detection   │
+                                                   └──────────┬───────────┘
+                                                              │
+                                                   ┌──────────▼───────────┐
+                                                   │  Report Layer        │
+                                                   │  (utils/report.py)   │
+                                                   │  → data/reports.json │
+                                                   └──────────────────────┘
+```
 
-| Feature | Status |
-|---|---|
-| Image upload & preview | ✅ Complete |
-| AI classifier abstraction | ✅ Complete (placeholder mode) |
-| AI prediction display | ✅ Complete |
-| Category confirmation / manual selection | ✅ Complete |
-| Optional description | ✅ Complete |
-| Structured report creation | ✅ Complete |
-| Local JSON persistence | ✅ Complete |
-| Report summary display | ✅ Complete |
-
-### ⚠️ Current AI Model Limitation
-
-**V1 ships with no model file.**  The `models/` directory is intentionally empty.
-
-A low-accuracy **garbage-classification model** will be connected later.  That model only detects *types of garbage* (Plastic, Paper, Glass, etc.) — it **cannot** detect potholes, streetlights, water leakage, or road damage.
-
-When no model is present, the application gracefully falls back to manual category selection.  Nothing crashes.
+**Streamlit has been fully removed.** The frontend is plain HTML/CSS/JS; the backend is FastAPI. They communicate over REST.
 
 ---
 
-## Supported Issue Types
+## V1 Workflow
 
-All six categories are available for citizen selection in V1:
+1. Citizen opens the **Detect** page and uploads an image (JPG/PNG).
+2. The frontend `POST`s the image to `/api/analyze`.
+3. The backend runs it through all loaded YOLO models and returns the highest-confidence prediction.
+4. The frontend displays the AI suggestion (category + confidence).
+5. The citizen confirms or overrides the category and adds a description.
+6. The citizen uses the browser Geolocation API to capture their coordinates. If GPS fails, a manual coordinate fallback is displayed.
+7. The citizen clicks **Submit Report**.
+8. The frontend `POST`s the report (including location) to `/api/reports`; the backend stores it in `data/reports.json`.
+9. The frontend displays the report ID.
+10. The **Reports** page fetches all reports via `GET /api/reports`.
 
-1. Pothole  
-2. Damaged Streetlight  
-3. Overflowing Garbage  
-4. Water Leakage  
-5. Road Damage  
-6. Other  
+---
 
-Only **Overflowing Garbage** will have AI assistance once the garbage model is connected.
+## API Endpoints
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `POST` | `/api/analyze` | Upload an image for AI classification |
+| `POST` | `/api/reports` | Create a new civic-issue report |
+| `GET`  | `/api/reports` | Retrieve all stored reports |
+| `GET`  | `/api/health`  | System health + loaded models list |
+
+### `POST /api/analyze`
+
+**Request:** multipart/form-data with field `file` (JPG/JPEG/PNG, ≤10 MB)
+
+**Success response:**
+```json
+{
+  "success": true,
+  "ai_available": true,
+  "category": "Overflowing Garbage",
+  "subcategory": "Plastic",
+  "confidence": 0.72,
+  "probabilities": { ... },
+  "model": "garbage_classification",
+  "message": "AI identified Overflowing Garbage (Plastic) with 72% confidence."
+}
+```
+
+**Model unavailable response:**
+```json
+{
+  "success": true,
+  "ai_available": false,
+  "category": null,
+  "confidence": 0.0,
+  "message": "No AI model is currently configured."
+}
+```
+
+### `POST /api/reports`
+
+**Request:** JSON body
+```json
+{
+  "issue_type": "Overflowing Garbage",
+  "confirmed_category": "Overflowing Garbage",
+  "description": "Garbage overflow near bus stop",
+  "image_filename": "photo.jpg",
+  "ai_result": { "available": true, "category": "Overflowing Garbage", "confidence": 0.72 },
+  "location": {
+    "latitude": 19.0760,
+    "longitude": 72.8777,
+    "source": "browser_gps",
+    "accuracy_meters": 12.5
+  }
+}
+```
+
+**Response:**
+```json
+{ "success": true, "report_id": "RPT-000001", "status": "reported" }
+```
 
 ---
 
@@ -66,36 +130,37 @@ Only **Overflowing Garbage** will have AI assistance once the garbage model is c
 
 ```
 CivicAI/
-│
-├── app.py                     # Streamlit entry-point
-│
+├── backend/
+│   ├── __init__.py
+│   └── main.py              # FastAPI app — all API routes
+├── frontend/
+│   ├── config.js             # API_BASE_URL (centralised)
+│   ├── app.js                # Shared: theme, i18n, toast
+│   ├── detect.html           # Upload + AI analysis + report form
+│   ├── detect.js             # fetch calls to /api/analyze and /api/reports
+│   ├── reports.html          # Live reports from /api/reports + map
+│   ├── index.html            # Landing page
+│   ├── issues.html           # Civic category reference
+│   └── style.css             # Full design system
 ├── ai/
 │   ├── __init__.py
-│   ├── classifier.py          # CivicIssueClassifier (AI abstraction)
-│   └── preprocessing.py       # Image preprocessing for model input
-│
+│   ├── classifier.py         # CivicIssueClassifier (multi-model YOLO)
+│   └── preprocessing.py      # Generic image preprocessing
 ├── models/
-│   └── .gitkeep               # EMPTY — place model files here
-│
-├── components/
-│   ├── __init__.py
-│   ├── upload.py              # Image upload & preview UI
-│   └── report_form.py         # Category confirmation & description form
-│
+│   ├── garbage_classification/best.pt
+│   ├── road_damage_detection/best.pt
+│   ├── litter_detection/best.pt
+│   ├── flood_detection/best.pt
+│   └── (littering_event_detection/, ollama, whisper, yolo — available)
 ├── config/
 │   ├── __init__.py
-│   └── constants.py           # Centralised constants (issue types, statuses, paths)
-│
+│   └── constants.py          # Issue types, statuses, paths
 ├── utils/
 │   ├── __init__.py
-│   └── report.py              # Report creation & JSON persistence
-│
+│   └── report.py             # Report creation + JSON persistence
 ├── data/
-│   └── reports.json           # Local report storage (starts as [])
-│
+│   └── reports.json          # Local report storage
 ├── uploads/
-│   └── .gitkeep               # Uploaded images saved here at runtime
-│
 ├── requirements.txt
 ├── README.md
 └── .gitignore
@@ -103,148 +168,91 @@ CivicAI/
 
 ---
 
-## Architecture
-
-```
-Streamlit UI  (app.py)
-    │
-    ├── components/upload.py        → Image upload & validation
-    ├── components/report_form.py   → Category + description form
-    │
-    ├── ai/classifier.py           → AI abstraction layer
-    │       │
-    │       └── ai/preprocessing.py → Model-specific image preprocessing
-    │
-    └── utils/report.py            → Report schema + JSON persistence
-```
-
-**Future expansion** (V2+):
-
-```
-ai/
-├── classifier.py          ← garbage classification (+ general civic)
-├── duplicate_detector.py   ← location + image similarity
-├── priority_engine.py      ← scoring with proximity, age, severity
-├── spam_detector.py        ← trust scoring
-└── resolution_verifier.py  ← before/after image comparison
-```
-
----
-
 ## Setup & Run
 
-### 1. Clone the repository
+### 1. Clone and install
 
 ```bash
 git clone <repo-url>
 cd CivicAI
-```
-
-### 2. Create a virtual environment
-
-```bash
 python -m venv .venv
-```
 
-Activate it:
+# Activate:
+# Windows PowerShell: .venv\Scripts\Activate.ps1
+# macOS/Linux:        source .venv/bin/activate
 
-- **Windows (PowerShell):** `.venv\Scripts\Activate.ps1`
-- **Windows (CMD):** `.venv\Scripts\activate.bat`
-- **macOS / Linux:** `source .venv/bin/activate`
-
-### 3. Install dependencies
-
-```bash
 pip install -r requirements.txt
 ```
 
-### 4. Run the application
+### 2. Start the backend
 
 ```bash
-streamlit run app.py
+python -m uvicorn backend.main:app --reload
 ```
 
-The app will open at [http://localhost:8501](http://localhost:8501).
+Backend will be available at `http://127.0.0.1:8000`.
+Check health: `http://127.0.0.1:8000/api/health`
+
+### 3. Serve the frontend
+
+Use any static file server. Examples:
+
+```bash
+# Python
+python -m http.server 5500 --directory frontend
+
+# VS Code Live Server (default port 5500)
+# Or Node http-server
+npx http-server frontend -p 5500
+```
+
+Open `http://127.0.0.1:5500/detect.html` to start.
 
 ---
 
-## How the AI Abstraction Works
+## AI Model Status
 
-### `ai/classifier.py` — `CivicIssueClassifier`
+| Model | Directory | Capability |
+|-------|-----------|------------|
+| Garbage Classification | `models/garbage_classification/best.pt` | Classifies types of garbage (low accuracy) |
+| Road Damage Detection | `models/road_damage_detection/best.pt` | Detects road cracks, potholes (D00–D50 classes) |
+| Litter Detection | `models/litter_detection/best.pt` | Detects litter/waste objects |
+| Flood Detection | `models/flood_detection/best.pt` | Detects flooding/waterlogging |
 
-The classifier's `predict(image)` method always returns a **structured dict**:
+> **Important:** These are pretrained models with varying accuracy. The garbage classifier in particular is known to be low-accuracy. The platform is honest about AI confidence — it always shows the confidence score and allows the citizen to override the category.
 
-```python
-# When no model is loaded (V1 default):
-{
-    "available": False,
-    "category": None,
-    "confidence": 0.0,
-    "probabilities": {},
-    "model": None,
-    "message": "No AI model is currently configured."
-}
-
-# When the garbage model is connected (future):
-{
-    "available": True,
-    "category": "Plastic",
-    "confidence": 0.72,
-    "probabilities": {"Plastic": 0.72, "Paper": 0.12, ...},
-    "model": "garbage_model",
-    "message": None
-}
-```
-
-The rest of the application only checks `result["available"]` to decide whether to show an AI suggestion or ask for manual input.  **No other file needs to change when the model is connected.**
-
-### Where to place the model
-
-1. Put your model file in `models/` (e.g. `models/garbage_model.h5`).
-2. Open `ai/classifier.py` → `_load_model()`.
-3. Uncomment / adapt the loading block for your framework.
-4. Add the framework (e.g. `tensorflow`) to `requirements.txt`.
-5. Update `ai/preprocessing.py` if the model needs specific input dimensions or normalisation.
+The application runs correctly even if *all* model files are missing — it falls back to manual category selection.
 
 ---
 
-## Report Schema
+## Supported Issue Types
 
-Every report follows the full FSD 2 schema, even in V1:
+1. Pothole
+2. Damaged Streetlight
+3. Overflowing Garbage
+4. Water Leakage
+5. Road Damage
+6. Other
 
-```jsonc
-{
-    "id": "RPT-000001",
-    "issue":       { "type": "...", "subcategory": null },
-    "image":       { "filename": "...", "path": "..." },
-    "ai":          { "available": false, ... },
-    "user":        { "confirmed_category": "...", "description": "..." },
-    "location":    { "latitude": null, "longitude": null, "address": null },
-    "status":      "reported",
-    "priority":    { "score": null, "level": null, "factors": {} },
-    "duplicates":  { "is_duplicate": null, "matches": [] },
-    "spam":        { "score": null, "flagged": null, "reasons": [] },
-    "resolution":  { "after_image": null, ... },
-    "assignment":  { "authority_id": null, "department": null, ... },
-    "created_at":  "...",
-    "updated_at":  "..."
-}
-```
-
-Fields marked `null` are reserved for future versions.
+AI currently assists with garbage, road damage, litter, and flood categories. Damaged Streetlight and Other require manual selection.
 
 ---
 
-## Adding Future FSD 2 Modules
+## Future FSD 2 Features
 
-| Module | New files to create | Integration point |
-|---|---|---|
-| GPS / Map | `components/location.py` | Add to `app.py` between upload and form |
-| Duplicate detection | `ai/duplicate_detector.py` | Call after `create_report()` |
-| Priority engine | `ai/priority_engine.py` | Call after duplicate check |
-| Spam detection | `ai/spam_detector.py` | Call during submission |
-| Resolution verification | `ai/resolution_verifier.py` | New authority workflow page |
-| Authority dashboard | `pages/authority.py` | Streamlit multi-page app |
+These fields exist in the report schema but have no logic yet:
+
+| Feature | Reserved endpoint | Status |
+|---------|-------------------|--------|
+| GPS Location | `/api/reports` | ✅ Implemented (V2) |
+| Duplicate Detection | `POST /api/duplicates/check` | Schema ready |
+| Priority Scoring | `POST /api/priority/calculate` | Schema ready |
+| Authority Dashboard | `GET /api/authority/reports` | Schema ready |
+| Status Updates | `PATCH /api/reports/{id}/status` | Schema ready |
+| Assignment | `POST /api/reports/{id}/assign` | Schema ready |
+| Resolution Verification | `POST /api/reports/{id}/resolution` | Schema ready |
+| Citizen Confirmation | `POST /api/reports/{id}/confirm` | Schema ready |
+| Spam Detection | `POST /api/spam/check` | Schema ready |
 
 ---
 

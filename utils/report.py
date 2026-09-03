@@ -33,6 +33,10 @@ def create_report(
     description: str,
     image_filename: str | None = None,
     image_path: str | None = None,
+    latitude: float | None = None,
+    longitude: float | None = None,
+    location_source: str | None = None,
+    accuracy_meters: float | None = None,
 ) -> dict:
     """Build a complete civic-issue report dict.
 
@@ -92,9 +96,11 @@ def create_report(
 
         # ── Location (V2+) ──────────────────────────────────
         "location": {
-            "latitude": None,
-            "longitude": None,
+            "latitude": latitude,
+            "longitude": longitude,
             "address": None,
+            "source": location_source,
+            "accuracy_meters": accuracy_meters,
         },
 
         # ── Status ───────────────────────────────────────────

@@ -2,28 +2,37 @@
   {
     "id": "RPT-000001",
     "issue": {
-      "type": "Other",
-      "subcategory": null
+      "type": "Overflowing Garbage",
+      "subcategory": "Plastic"
     },
     "image": {
       "filename": "plastic-bottle-scrap.jpg",
-      "path": "uploads\\plastic-bottle-scrap.jpg"
+      "path": null
     },
     "ai": {
-      "available": false,
-      "model": null,
-      "category": null,
-      "confidence": 0.0,
-      "probabilities": {}
+      "available": true,
+      "model": "garbage_classification",
+      "category": "Overflowing Garbage",
+      "subcategory": "Plastic",
+      "confidence": 0.8084,
+      "probabilities": {
+        "Overflowing Garbage (Plastic)": 0.8084,
+        "Overflowing Garbage (Clear Plastic Bottle)": 0.6213,
+        "Overflowing Garbage (Plastic Bottle Cap)": 0.6121,
+        "Overflowing Garbage (Drink Can)": 0.5011,
+        "Overflowing Garbage (Plastic Straw)": 0.3617
+      }
     },
     "user": {
-      "confirmed_category": "Other",
-      "description": "PLASTIC WASTE"
+      "confirmed_category": "Overflowing Garbage",
+      "description": ""
     },
     "location": {
-      "latitude": null,
-      "longitude": null,
-      "address": null
+      "latitude": 19.107009777046418,
+      "longitude": 72.83771780494865,
+      "address": null,
+      "source": "browser_gps",
+      "accuracy_meters": 151.0
     },
     "status": "reported",
     "priority": {
@@ -51,7 +60,70 @@
       "department": null,
       "assigned_at": null
     },
-    "created_at": "2026-09-03T13:13:36.882706+00:00",
-    "updated_at": "2026-09-03T13:13:36.882706+00:00"
+    "created_at": "2026-09-03T15:58:43.989500+00:00",
+    "updated_at": "2026-09-03T15:58:43.989500+00:00"
+  },
+  {
+    "id": "RPT-000002",
+    "issue": {
+      "type": "Pothole",
+      "subcategory": "Pothole"
+    },
+    "image": {
+      "filename": "MicrosoftTeams-image_32.jpg",
+      "path": null
+    },
+    "ai": {
+      "available": true,
+      "model": "pothole",
+      "category": "Pothole",
+      "subcategory": "Pothole",
+      "confidence": 0.7701,
+      "probabilities": {
+        "Pothole (Pothole)": 0.7701,
+        "Overflowing Garbage (Paper)": 0.732,
+        "Overflowing Garbage (Metal)": 0.3046,
+        "Road Damage (Manhole / Surface Patch (D50))": 0.6278
+      }
+    },
+    "user": {
+      "confirmed_category": "Pothole",
+      "description": ""
+    },
+    "location": {
+      "latitude": 19.10698635971309,
+      "longitude": 72.83771771942618,
+      "address": null,
+      "source": "browser_gps",
+      "accuracy_meters": 149.0
+    },
+    "status": "reported",
+    "priority": {
+      "score": null,
+      "level": null,
+      "factors": {}
+    },
+    "duplicates": {
+      "is_duplicate": null,
+      "matches": []
+    },
+    "spam": {
+      "score": null,
+      "flagged": null,
+      "reasons": []
+    },
+    "resolution": {
+      "after_image": null,
+      "image_similarity": null,
+      "ai_verified": null,
+      "citizen_confirmed": null
+    },
+    "assignment": {
+      "authority_id": null,
+      "department": null,
+      "assigned_at": null
+    },
+    "created_at": "2026-09-03T16:05:45.834031+00:00",
+    "updated_at": "2026-09-03T16:05:45.834031+00:00"
   }
 ]
