@@ -63,26 +63,32 @@ class CivicIssueClassifier:
 
         # Known sub-model paths
         known_models = {
+            "pothole": model_root / "pothole" / "best.pt",
             "garbage_classification": model_root / "garbage_classification" / "best.pt",
             "road_damage_detection": model_root / "road_damage_detection" / "best.pt",
             "flood_detection": model_root / "flood_detection" / "best.pt",
             "litter_detection": model_root / "litter_detection" / "best.pt",
         }
 
+        loaded_paths = set()
         for model_name, path in known_models.items():
             if path.exists():
                 try:
                     self._models[model_name] = YOLO(str(path))
+                    loaded_paths.add(path.resolve())
                     logger.info("Loaded model: %s from %s", model_name, path)
                 except Exception as e:
                     logger.error("Failed to load model %s (%s): %s", model_name, path, e)
 
         # Also discover any additional .pt files placed directly or in subdirectories
         for pt_path in model_root.rglob("*.pt"):
+            if pt_path.resolve() in loaded_paths:
+                continue
             stem = pt_path.parent.name if pt_path.name == "best.pt" else pt_path.stem
             if stem not in self._models:
                 try:
                     self._models[stem] = YOLO(str(pt_path))
+                    loaded_paths.add(pt_path.resolve())
                     logger.info("Discovered model: %s from %s", stem, pt_path)
                 except Exception as e:
                     logger.error("Failed to load discovered model %s: %s", pt_path, e)
@@ -210,7 +216,11 @@ class CivicIssueClassifier:
 
     def _map_to_issue_type(self, model_name: str, class_name: str) -> tuple[str, str]:
         """Map model-specific class name to top-level issue category and subcategory."""
-        # 1. Road damage model
+        # 1. Pothole model
+        if "pothole" in model_name or class_name.lower() == "pothole":
+            return ("Pothole", "Pothole")
+
+        # 2. Road damage model
         if "road_damage" in model_name or class_name.upper() in ROAD_DAMAGE_MAP:
             mapping = ROAD_DAMAGE_MAP.get(class_name.upper())
             if mapping:
