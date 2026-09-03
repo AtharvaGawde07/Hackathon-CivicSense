@@ -1,0 +1,8 @@
+import ollama as ollama_client
+
+def generate_with_ollama(prompt, model="llama3"):
+    response = ollama_client.chat(
+        model=model,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return response["message"]["content"]

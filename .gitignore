@@ -1,0 +1,40 @@
+# ── Virtual environment ──────────────────────────────────────
+.venv/
+venv/
+env/
+
+# ── Python bytecode ─────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# ── Environment variables ───────────────────────────────────
+.env
+.env.*
+
+# ── Uploaded images (keep the directory, ignore contents) ───
+uploads/*
+!uploads/.gitkeep
+
+# ── OS files ────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── IDE / editor ────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Distribution / packaging ───────────────────────────────
+dist/
+build/
+*.egg-info/
+
+# ── Model files (tracked separately / too large for git) ───
+# Uncomment the line below if you do NOT want to commit model files:
+# models/*.h5
+# models/*.pt
+# models/*.onnx

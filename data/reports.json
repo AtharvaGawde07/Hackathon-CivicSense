@@ -1,0 +1,57 @@
+[
+  {
+    "id": "RPT-000001",
+    "issue": {
+      "type": "Other",
+      "subcategory": null
+    },
+    "image": {
+      "filename": "plastic-bottle-scrap.jpg",
+      "path": "uploads\\plastic-bottle-scrap.jpg"
+    },
+    "ai": {
+      "available": false,
+      "model": null,
+      "category": null,
+      "confidence": 0.0,
+      "probabilities": {}
+    },
+    "user": {
+      "confirmed_category": "Other",
+      "description": "PLASTIC WASTE"
+    },
+    "location": {
+      "latitude": null,
+      "longitude": null,
+      "address": null
+    },
+    "status": "reported",
+    "priority": {
+      "score": null,
+      "level": null,
+      "factors": {}
+    },
+    "duplicates": {
+      "is_duplicate": null,
+      "matches": []
+    },
+    "spam": {
+      "score": null,
+      "flagged": null,
+      "reasons": []
+    },
+    "resolution": {
+      "after_image": null,
+      "image_similarity": null,
+      "ai_verified": null,
+      "citizen_confirmed": null
+    },
+    "assignment": {
+      "authority_id": null,
+      "department": null,
+      "assigned_at": null
+    },
+    "created_at": "2026-09-03T13:13:36.882706+00:00",
+    "updated_at": "2026-09-03T13:13:36.882706+00:00"
+  }
+]

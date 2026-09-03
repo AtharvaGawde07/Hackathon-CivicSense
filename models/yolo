@@ -1,0 +1,8 @@
+_model = None
+
+def get_yolo_model():
+    global _model
+    if _model is None:
+        from ultralytics import YOLO
+        _model = YOLO("yolov8n.pt")  # auto-downloads first time, ~6MB
+    return _model

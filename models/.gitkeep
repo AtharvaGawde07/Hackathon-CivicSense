@@ -1,0 +1,3 @@
+# This directory is intentionally kept empty.
+# Place your pretrained model file(s) here (e.g. garbage_model.h5, garbage_model.pt).
+# See ai/classifier.py for instructions on connecting a model.
